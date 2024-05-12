@@ -10,31 +10,36 @@ load_dotenv('C:\\Users\\justi\\Code\\bot\\.env')
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 
+class Bot(discord.Client):
+    def __init__(self, *, intents:discord.Intents):
+        super().__init__(command_prefix='/', intents=intents)
+        self.tree = app_commands.CommandTree(self)
+
+    async def setup_hook(self) -> None:
+        print('setup_hook::syncing tree')
+        res = await self.tree.sync()
+        print(res)
+
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
-# bot 
-bot = discord.Client(command_prefix='/', intents=intents)
-# assign a tree to bot (discord.Client)
-tree = app_commands.CommandTree(bot)
-
-@bot.event
-async def on_member_join(member):
-    # do nothing when a new member joins the discord
-    return
+# bot
+bot = Bot(intents=intents)
 
 # Commands
+
 # spray
-@tree.command(name="spray", description="Spray a user being annoying",guild=discord.Object(id=639144106672652288))
+# guild=discord.Object(id=639144106672652288)
+@bot.tree.command(name="spray-members", description="Spray a user being annoying",)
 async def spray_command(interaction:discord.Interaction, member:discord.Member = None):
     if member != None:
-        response= f"SPRRTZ SPRRTZ SPRRTZ {member.mention}"
+        response= f"SPRRTZ SPRRTZ SPRRTZ SPRRTZ {member.mention}"
         await interaction.response.send_message(response)
     else:
         interaction.response.send_message("Invalid target, please enter a valid user to spray.")
 
 # join vc
-@tree.command(name="playsprtz", description="join vc and spray",guild=discord.Object(id=639144106672652288))
+@bot.tree.command(name="playsprtz", description="join vc and spray",)
 async def playsprtz_command(interaction:discord.Interaction):
     if(interaction.user.voice):
         channel = interaction.user.voice.channel
@@ -54,7 +59,7 @@ async def playsprtz_command(interaction:discord.Interaction):
         await interaction.response.send_message("You must be in a voice channel to use this command")
 
 # force kick bot from a vc if ever stuck
-@tree.command(name="leavevc", description="force leave the vc",guild=discord.Object(id=639144106672652288))
+@bot.tree.command(name="leavevc", description="force leave the vc")
 async def leavevc_command(interaction:discord.Interaction):
     if(interaction.guild.voice_client):
         await interaction.guild.voice_client.disconnect()
@@ -69,17 +74,17 @@ async def on_message(message):
 # bot successfully online
 @bot.event
 async def on_ready():
-    # bot tree sync
-    await tree.sync(guild=discord.Object(id=639144106672652288))
-    # can this be used to plant tree sync?
-    guild = discord.utils.find(lambda g: g.name==GUILD, bot.guilds) 
+    # sync to all command trees across multiple servers
+    guild_count = 0
+    for guild in bot.guilds:
+        guild_count = guild_count + 1
+        #await tree.sync(guild=discord.Object(guild.id))
+        #await tree.sync()
 
-    # track how many guilds the bot is in
-    #guild_count = 0
-    #for guild in bot.guilds:
-    #    print(f"- {guild.name} (id: {guild.id})")
-    #    guild_count = guild_count + 1
+    #res = await tree.sync(guild=discord.Object(id=639144106672652288))
 
-    #print(guild_count)
+    print(f'Spray Bot is currently in {guild_count} guilds')
+
+    
 
 bot.run(TOKEN)
